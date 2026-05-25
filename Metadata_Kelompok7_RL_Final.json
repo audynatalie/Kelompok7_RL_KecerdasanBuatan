@@ -1,0 +1,240 @@
+{
+  "kode_kelompok": "K07",
+  "topik_pilihan": 5,
+  "nama_topik": "Reinforcement Learning",
+  "judul_proyek": "Optimisasi Distribusi Bantuan Bencana Gempa di Indonesia dengan Deep Q-Network",
+  "abstrak_singkat": "Proyek ini melatih agen Deep Q-Network (DQN) untuk mengoptimasi urutan distribusi bantuan ke lokasi-lokasi terdampak gempa bumi di Indonesia. Custom Gymnasium environment DisasterReliefEnv dibangun menggunakan dataset katalog gempa BMKG (2008-2023) dari Kaggle berisi 92.887 kejadian gempa (30.332 setelah filter mag >= 4.0). Agent berperan sebagai koordinator tim bantuan BNPB dari Jakarta yang melayani 6 lokasi gempa per episode. Setelah training 1000 episode, DQN mencapai average reward 213.30 +/- 19.33 dengan 6/6 sites served. Evaluasi komparatif: Greedy-Nearest (235.04) mengungguli DQN karena distance penalty terlalu kecil relatif terhadap magnitude reward. DQN sedikit di atas Random (213.02) dan Greedy-Magnitude (211.76). Temuan ini menunjukkan pentingnya reward shaping yang seimbang dalam RL untuk disaster response.",
+
+  "metode_ai": [
+    {
+      "nama": "Deep Q-Network (DQN)",
+      "peran": "utama",
+      "varian": "Vanilla DQN dengan target network (hard update tiap 10 episode), experience replay buffer (10000), epsilon-greedy (1.0 -> 0.01, decay 0.995), MLP 2 hidden layer x 128 unit ReLU, gradient clipping max norm 1.0",
+      "catatan": "Algoritma utama untuk melatih agent distribusi bantuan. Dipilih karena action space discrete (pilih 1 dari 6 lokasi) dan state space continuous (33 dimensi)."
+    },
+    {
+      "nama": "Random Policy",
+      "peran": "baseline",
+      "varian": "Uniform random selection dari valid actions (lokasi yang belum dilayani)",
+      "catatan": "Baseline terendah. Hasil: avg reward 213.02 +/- 19.91, distance 10.044 km."
+    },
+    {
+      "nama": "Greedy-Nearest Policy",
+      "peran": "baseline",
+      "varian": "Heuristic non-learning: selalu pilih lokasi gempa terdekat dari posisi agent saat ini (Euclidean distance)",
+      "catatan": "Baseline terbaik. Hasil: avg reward 235.04 +/- 16.70, distance 5.639 km. Mengungguli DQN karena meminimasi jarak."
+    },
+    {
+      "nama": "Greedy-Magnitude Policy",
+      "peran": "baseline",
+      "varian": "Heuristic non-learning: selalu pilih lokasi gempa dengan magnitudo terbesar dari yang belum dilayani",
+      "catatan": "Baseline terendah kedua. Hasil: avg reward 211.76 +/- 19.43, distance 10.296 km."
+    }
+  ],
+
+  "frameworks": [
+    {"nama": "PyTorch", "versi": "2.10.0+cu128", "kegunaan": "Implementasi Q-Network (MLP), training loop, gradient computation"},
+    {"nama": "Gymnasium", "versi": "0.29+", "kegunaan": "Interface environment standar (custom DisasterReliefEnv mengikuti Gym API)"},
+    {"nama": "Pandas", "versi": "2.x", "kegunaan": "Loading dan preprocessing dataset katalog gempa BMKG (CSV)"},
+    {"nama": "Matplotlib", "versi": "3.x", "kegunaan": "Visualisasi: EDA, learning curve, bar chart, box plot, peta rute agent"}
+  ],
+
+  "datasets": [
+    {
+      "nama": "Earthquakes in Indonesia (Kaggle - BMKG)",
+      "tipe": "dataset_publik",
+      "sumber": "Katalog gempa Badan Meteorologi, Klimatologi, dan Geofisika (BMKG) Indonesia, dipublikasikan di Kaggle oleh user kekavigi",
+      "url_sumber_publik": "https://www.kaggle.com/datasets/kekavigi/earthquakes-in-indonesia",
+      "jumlah_sampel": 92887,
+      "jumlah_kelas": 0,
+      "proses_akuisisi_mandiri": "Dataset diunduh dari Kaggle. File utama katalog_gempa.csv berisi 92.887 kejadian gempa di Indonesia periode 2008-2023 dengan kolom: tgl, ot, lat, lon, depth, mag, remark. Preprocessing: filter gempa mag >= 4.0 menghasilkan 30.332 gempa signifikan. Koordinat lat/lon dinormalisasi ke range [0,1] menggunakan batas Indonesia (lat: -11 s/d 6, lon: 95 s/d 141). Magnitude dinormalisasi dengan pembagi 9.0, depth dengan pembagi 700.0.",
+      "peran_di_proyek": "Data gempa digunakan untuk membangun custom Gymnasium environment yang realistis. Setiap episode, 6 gempa disampling acak dari dataset sebagai lokasi bencana yang harus dilayani agent.",
+      "spek_rl": {
+        "state_space": "Box(low=0, high=1, shape=(33,)) - [agent_lat, agent_lon, supply, lalu per site: lat, lon, mag, depth, served] x 6 sites",
+        "action_space": "Discrete(6) - pilih 1 dari 6 lokasi bencana untuk dikunjungi",
+        "reward_function": "+mag*10*depth_factor saat melayani site, -0.5*(distance/100) penalty jarak, -5 penalty invalid action, +20 bonus completion, -0.1 penalty per step",
+        "max_episode_steps": 15,
+        "framework_env": "Gymnasium (custom subclass gym.Env)",
+        "modifikasi_tim": "Seluruh logic environment (DisasterReliefEnv) dibangun tim dari nol. Reward function didesain untuk balance antara prioritas magnitudo, efisiensi jarak, dan urgensi waktu. Depth factor dirancang berdasarkan pemahaman domain seismologi."
+      }
+    }
+  ],
+
+  "metrik_utama": [
+    "Cumulative reward per episode: DQN 213.30 +/- 19.33 (200 episode evaluasi)",
+    "Average sites served per episode: 6.0 / 6 (100% untuk semua agent)",
+    "Average total distance: DQN 9988 km, Random 10044 km, Greedy-Nearest 5639 km, Greedy-Magnitude 10296 km",
+    "Perbandingan: Greedy-Nearest (+10.2%) > DQN > Random > Greedy-Magnitude"
+  ],
+
+  "klaim_bonus": ["B1", "B3"],
+
+  "anggota": [
+    {
+      "nama": "Aisya Rivelia Azzahra",
+      "npm": "2306161864",
+      "peran_utama": "DQN Algorithm Engineer",
+      "focus_area": [
+        "Implementasi inti algoritma DQN mencakup class ReplayBuffer, QNetwork, dan DQNAgent",
+        "Mekanisme target network dengan hard update setiap 10 episode",
+        "Epsilon-greedy dengan valid action masking menggunakan tensor PyTorch",
+        "Verifikasi inisialisasi DQN Agent dan kalkulasi loss MSE antara prediksi Q-value dan target Q-value"
+      ],
+      "konsep_dikuasai_implementasi": [
+        "PyTorch module building (nn.Sequential, Linear, ReLU)",
+        "Kalkulasi fungsi Loss (MSE) berdasarkan prediksi Q-Value dan Target",
+        "Sinkronisasi bobot (weights) antar Neural Network",
+        "Masking invalid actions pada tensor PyTorch"
+      ],
+      "konsep_dikuasai_teori": [
+        "Persamaan Bellman (Bellman Optimality Equation)",
+        "Fungsi Experience Replay untuk mencegah korelasi sekuensial data",
+        "Alasan perlunya Target Network untuk mengatasi masalah moving target",
+        "Cara kerja propagasi balik (Backpropagation) pada RL"
+      ],
+      "bagian_laporan": [
+        "Bab 2.1 (Tinjauan Pustaka)",
+        "Bab 2.2 (Landasan Teori Model)",
+        "Bab 2.3 (Justifikasi Ilmiah Pemilihan)",
+        "Bab 5.1 (Kesimpulan)"
+      ],
+      "bagian_kode": [
+        "Cell 1. Install Dependencies",
+        "Cell 2. Import Libraries",
+        "Cell 6. DQN Agent (class ReplayBuffer, QNetwork, dan DQNAgent)",
+        "Cell 16. (Analisis etika, bias, edge cases, dan keterbatasan model DQN)"
+      ]
+    },
+    {
+      "nama": "Aliya Rizqiningrum Salamun",
+      "npm": "2306161813",
+      "peran_utama": "Comparative Evaluator & Ethical Analyst",
+      "focus_area": [
+        "Pipeline evaluasi komparatif multi-episode untuk mengukur kestabilan keempat agent",
+        "Desain layout visualisasi analitik 2x2 subplot untuk learning curve",
+        "Draft analisis etika dan keterbatasan model (potensi bias magnitudo, bias geografis, dan bias data BMKG)",
+        "Eksplorasi edge cases seperti aftershock dan penipisan supply"
+      ],
+      "konsep_dikuasai_implementasi": [
+        "Metode evaluasi komparatif multi-episode untuk mengukur kestabilan model",
+        "Ekstraksi dan agregasi data performa (mean, standard deviation)",
+        "Pemrograman visualisasi analitik (Bar chart, Box plot, Scatter geo-plotting)",
+        "Debugging anomali perilaku agen melalui plot evaluasi"
+      ],
+      "konsep_dikuasai_teori": [
+        "Pentingnya konsep Baseline dalam memvalidasi keaslian proses learning RL",
+        "Bias Geografis dalam AI: Dampak jarak pusat terhadap prioritas agent",
+        "Etika algoritma: Keadilan distribusi logistik berdasarkan magnitudo vs efisiensi",
+        "Keterbatasan pemodelan lingkungan statis (Haversine) dibanding data realita"
+      ],
+      "bagian_laporan": [
+        "Bab 1.3 (Tujuan Proyek)",
+        "Bab 1.4 (Ruang Lingkup dan Batasan)",
+        "Bab 3.2 (Konfigurasi Parameter)",
+        "Bab 3.3 (Metrik Evaluasi)",
+        "Bab 3.4 (Hasil Kuantitatif)",
+        "Bab 5.3 (Future Work)"
+      ],
+      "bagian_kode": [
+        "Cell 9. Fungsi Visualisasi (plot_training_curves, plot_comparison, dll)",
+        "Cell 11, 13, 13b, 14, 15 (Eksekusi seluruh fungsi visualisasi)",
+        "Cell 12. Evaluasi Komparatif (evaluate_agent)"
+      ]
+    },
+    {
+      "nama": "Audy Natalie Cecilia Rumahorbo",
+      "npm": "2306266962",
+      "peran_utama": "Training Pipeline & Baseline Developer",
+      "focus_area": [
+        "Loading, verifikasi dataset gempa BMKG, dan Exploratory Data Analysis (EDA)",
+        "Konstruksi training pipeline loop 2000 episode dengan logging metrik",
+        "Penjadwalan decay epsilon dan sinkronisasi model pada fase training",
+        "Desain logika 3 algoritma Baseline Agent (Random, Greedy-Nearest, Greedy-Magnitude)",
+        "Dokumentasi rencana 4 konfigurasi hyperparameter tuning dan analisis konvergensi loss"
+      ],
+      "konsep_dikuasai_implementasi": [
+        "Manajemen siklus hidup RL: Reset, Step, Reward update, Learn",
+        "Penjadwalan decay epsilon dan sinkronisasi model",
+        "Algoritma heuristik Greedy (Pencarian titik Euclidean terdekat)",
+        "Penyimpanan dan pembacaan metrik dalam memori iteratif"
+      ],
+      "konsep_dikuasai_teori": [
+        "Perbedaan mendasar fase Training vs fase Inference pada RL",
+        "Cara algoritma Heuristik (non-learning) bekerja dan perbandingannya dengan AI",
+        "Definisi Episodic Tasks vs Continuous Tasks dalam RL",
+        "Pentingnya faktor konvergensi pada metrik Loss dan Reward"
+      ],
+      "bagian_laporan": [
+        "Bab 2.4 (Block Diagram Sistem End-to-End)",
+        "Bab 2.5 (Flowchart Program)",
+        "Bab 3.1 (Dataset dan pra-pemrosesan)",
+        "Bab 5.2 (Klaim Bonus Skor)"
+      ],
+      "bagian_kode": [
+        "Cell 3. Upload Dataset (loading & verifikasi dataset)",
+        "Cell 3b. Exploratory Data Analysis (EDA)",
+        "Cell 7. Fungsi Training (train.py)",
+        "Cell 8. Baseline Agents (class RandomAgent, GreedyNearestAgent, GreedyMagnitudeAgent)"
+      ]
+    },
+    {
+      "nama": "Dwigina Sitti Zahwa",
+      "npm": "2306250724",
+      "peran_utama": "Environment Architect & Iteration Optimizer",
+      "focus_area": [
+        "Desain state space 33 dimensi dan action space Discrete(6)",
+        "Desain reward function dengan depth_factor serta formulasi trade-off magnitudo vs penalti jarak",
+        "Verifikasi fungsional environment melalui episode uji coba",
+        "Eksperimen hyperparameter tuning dengan variasi Learning Rate dan Gamma",
+        "Analisis kasus kegagalan (Error Analysis) DQN vs Greedy-Nearest"
+      ],
+      "konsep_dikuasai_implementasi": [
+        "Manipulasi struktur State dan Action space pada Gymnasium",
+        "Implementasi formula Haversine untuk sistem logistik berdasar koordinat",
+        "Translasi interaksi agen menjadi nilai reward matematis",
+        "Grid search manual hyperparameter tuning dengan CustomDQNAgent",
+        "Analisis komparatif per-episode DQN vs Greedy-Nearest untuk identifikasi systematic failure patterns"
+      ],
+      "konsep_dikuasai_teori": [
+        "Definisi formal Markov Decision Process (State, Action, Reward)",
+        "Dampak Reward Shaping terhadap konvergensi agen (sparse vs dense)",
+        "Pengaruh hyperparameter (Gamma dan Learning Rate) pada stabilitas training",
+        "Pengaruh reward imbalance terhadap perilaku agent: magnitude dominance mencegah route optimization",
+        "Konsep policy degradation: menambah episode tanpa re-eksplorasi justru menurunkan performa"
+      ],
+      "bagian_laporan": [
+        "Bab 3.5 (Analisis Hyperparameter Tuning)",
+        "Bab 3.6 (Hasil Kualitatif & Error Analysis)",
+        "Bab 3.7 (Pembahasan)",
+        "Lampiran A (Berkas Metadata JSON)"
+      ],
+      "bagian_kode": [
+        "Cell 4. Konfigurasi (config.py, seluruh hyperparameter)",
+        "Cell 5. Custom Environment (environment.py, class DisasterReliefEnv, fungsi haversine, normalisasi)",
+        "Cell 14b. Error Analysis (analyze_error_cases, plot_error_analysis, print_error_cases_report)",
+        "Cell 16. (Analisis etika, bias, edge cases, dan keterbatasan model DQN)",
+        "Cell 17. (Dokumentasi Hyperparameter Tuning)"
+
+      ]
+    }
+  ],
+
+  "tautan": {
+    "github": "https://github.com/audynatalie/Kelompok7_RL_KecerdasanBuatan",
+    "colab": "https://colab.research.google.com/drive/1i5hrMhcUAnWJgFbIYrcMMVe2b8mLkMNQ?usp=sharing",
+    "dataset_mandiri": "https://www.kaggle.com/datasets/kekavigi/earthquakes-in-indonesia",
+    "video_demo": "https://youtu.be/eJy_0My_YCU"
+  },
+
+  "ai_assistant_usage": {
+    "digunakan": true,
+    "tools": ["Claude Sonnet 4.6", "ChatGPT", "Gemini"],
+    "bagian": [
+      "Optimasi desain reward function agar balance antara magnitudo dan jarak",
+      "Review dan perbaikan struktur kode agar lebih modular dan terdokumentasi",
+      "Pencarian referensi dataset Kaggle yang relevan untuk topik RL bencana alam",
+      "Debugging logic normalisasi state space pada environment"
+    ],
+    "estimasi_persentase": 15
+  }
+}
