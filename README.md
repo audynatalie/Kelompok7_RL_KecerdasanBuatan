@@ -1,4 +1,4 @@
-# Kelompok7_RL_KecerdasanBuatan
+# Reinforcement Learning: Optimasi Distribusi Bantuan Bencana Gempa Indonesia
 ## Anggota:
 | Nama | NPM |
 |---|---|
